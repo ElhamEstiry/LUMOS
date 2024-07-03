@@ -1,48 +1,220 @@
-<img src="https://github.com/IUST-Computer-Organization/.github/blob/main/images/CompOrg_orange.png" alt="Image" width="85" height="85" style="vertical-align:middle"> LUMOS RISC-V
-=================================
-> Light Utilization with Multicycle Operational Stages (LUMOS) RISC-V Processor Core
+<!-- <img src="https://github.com/IUST-Computer-Organization/.github/blob/main/images/CompOrg_orange.png" alt="Image" width="85" height="85" style="vertical-align:middle"> LUMOS RISC-V -->
+Computer Organization - Spring 2024
+==============================================================
+## Iran Univeristy of Science and Technology
+## Assignment 1: Assembly code execution on phoeniX RISC-V core
 
-<div align="justify">
+- Name: Elham Estiry
+- Team Members: Yasaman Nemati - Sanaz Motie
+- Student ID: 99411065 - 99413226 - 99413082
+- Date: 13.04.1403
+
+
 
 ## Introduction
 
-**LUMOS** is a multicycle RISC-V processor that implements a subset of `RV32I` instruction set, designed for educational use in computer organization classes at **Iran University of Science and Technology**. It allows for modular design projects, enabling students to gain hands-on experience with processor architecture.
+The primary aim of this project is to explore and implement a multi-cycle RISC-V processor with an additional fixed-point arithmetic unit. The project involves programming the processor to execute a simple RISC-V assembly code that calculates the distances between points on a map. The processor used for this project is the LUMOS RISC-V core, which stands for Light Utilization with Multicycle Operational Stages. This core is designed for educational purposes and supports a subset of the 32-bit base integer ISA of RISC-V.
 
-## Features
+### LUMOS RISC-V Core
 
-- LUMOS executes instructions in multiple stages, such as `instruction_fetch`, `fetch_wait`, `fetch_done`, `decode`, `execute`, `memory_access`, and etc. This approach allows for more complex operations and better utilization of processor resources compared to single-cycle designs. This processor does not support the entire `RV32I` instruction set, which is the base integer instruction set of RISC-V. Instead, it focuses on a subset of instructions that are essential for educational purposes and demonstrating the principles of computer architecture.
+The LUMOS core operates using a multi-cycle implementation where each instruction is broken down into several steps, each taking one clock cycle to complete. This design optimizes the use of various functional units, allowing them to be reused across different clock cycles, thus reducing hardware requirements. The processor's design is divided into two main parts:
 
-- The processor is designed with modularity in mind, allowing students to work on various components of the processor. As part of their course projects, students will design different execution units, such as FPUs, control units, memory interfaces, and other modules that are integral to the processor's functionality.
+1. **Data Path Design**: Focuses on designing the ALU and other functional units, and managing access to registers and memory.
+2. **Control Path Design**: Involves creating state machines to decode instructions and generate control signals necessary for manipulating the data path.
 
-## LUMOS Datapath
+### Data Path Implementation
 
-In a multicycle implementation, we can break down each instruction into a series of steps corresponding to the functional unit operations that are needed. These steps can be used to create a multi-cycle implementation. In this architecture, each step will take 1 clock cycle. This allows that components in the design and different functional units to be used more than once per instruction, as long as it is used on different clock cycles. This sharing of resources can help reduce the amount of hardware required. This classic view of CPU design partitions the design of a processor into data path design and control design. Data path design focuses on the design of ALU and other functional units as well as accessing the registers and memory. Control path design focuses on the design of the state machines to decode instructions and generate the sequence of control signals necessary to appropriately manipulate the data path.
+The data path implementation is detailed in the LUMOS.v file, and includes components such as the program counter, memory interface, instruction register, ALU, and register file. The process of executing an instruction involves several stages:
 
-![Alt text](https://github.com/IUST-Computer-Organization/LUMOS/blob/main/Images/Datapath_1.png "LUMOS Datapath Section 1")
-![Alt text](https://github.com/IUST-Computer-Organization/LUMOS/blob/main/Images/Datapath_2.png "LUMOS Datapath Section 2")
-![Alt text](https://github.com/IUST-Computer-Organization/LUMOS/blob/main/Images/Datapath_3.png "LUMOS Datapath Section 3")
+1. **Instruction Fetch and Decode**: The instruction is fetched from memory and decoded to determine the operation.
+2. **Operand Fetch and Immediate Generation**: The necessary operands are fetched from the register file, and immediate values are generated.
+3. **Execution**: The ALU performs the required operation based on the fetched operands and immediate values.
+4. **Write-Back**: The result of the operation is written back to the register file.
 
-## Synthesis
+### Fixed-Point Unit (FPU)
 
-This processor core is synthesizable in the 45nm CMOS technology node. LUMOS has gone through the RTL-to-GDS flow using *Synopsys Design Compiler* and *Cadence SoC Encounter* tools. At this node, the core can achieve a frequency of **500MHz** while occupying **12000um2** of area and consuming around **3mw** of power.
-</div>
+The project extends the LUMOS RISC-V core with a Fixed-Point Unit (FPU) capable of performing fixed-point arithmetic operations like addition, subtraction, multiplication, and square root calculation. The FPU operations are less precise than single-precision floating-point operations but are suitable for the project's requirements.
 
-<!-- ![Alt text](https://github.com/IUST-Computer-Organization/LUMOS/blob/main/LUMOS.png "The LUMOS microprocessor synthesized with Design Compiler and placed and routed by Cadence Encounter" =300x300)  -->
-
-<picture>
-    <img 
-        alt="The LUMOS microprocessor synthesized with Design Compiler and placed and routed by Cadence Encounter" 
-        src="https://github.com/IUST-Computer-Organization/LUMOS/blob/main/Images/LUMOS.png"
-        width="550" 
-        height="550"
-    > 
-</picture> 
+1. **Fixed-Point Arithmetic**: Uses Q notation (Qi.f) to represent numbers, where `i` is the number of integer bits and `f` is the number of fractional bits. This notation allows binary operations to yield correct results for fixed-point numbers.
+2. **Fixed-Point Multiplication**: The multiplication process involves simple binary multiplication with extra consideration for the number of bits in the product. The fixed-point position shifts after multiplication, requiring adjustments to maintain the correct format.
+3. **Fixed-Point Square Root Calculation**: Implements an Algorithmic State Machine (ASM) to calculate the square root using subtraction and bit shifts. This method provides an approximate answer suitable for the project's needs.
 
 
-## Copyright
+## SQRT Part
 
-Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.
+Square Root Unit Breakdown
 
-Copyright 2024 Iran University of Science and Technology - iustCompOrg@gmail.com  
+The Verilog code begins with the implementation of a square root unit. Here's a step-by-step explanation of its functionality:
+Registers and Parameters
 
-</div>
+    root and root_ready: Registers to store the computed square root and indicate readiness.
+    current_square_phase and next_square_phase: 2-bit state machine registers to manage the computation phases.
+    sqrt_function_begin and sqrt_function_busy: Control signals to initiate and track the square root calculation process.
+    x, q, ac, and test_result: Intermediate registers used in the computation.
+    ITER: A local parameter that determines the number of iterations needed for the calculation based on operand width and fractional bits.
+    valid: An unused register in this context.
+
+State Machine Logic
+
+    The state machine is updated with each clock cycle when the square root operation is triggered (operation == FPU_SQRT`).
+    The phases are managed in the always @(posedge clk) block:
+        If the square root operation is active, the state transitions to the next phase.
+        Otherwise, the state resets, and root_ready is cleared.
+
+Phase Transition Logic
+
+    In the always @(*) block, the next phase is determined based on the current phase:
+        Phase 0: Initialization (sets sqrt_function_begin to 0).
+        Phase 1: Begins the square root function (sets sqrt_function_begin to 1).
+        Phase 2: Continues the calculation.
+    This phase logic controls the progression of the square root computation.
+
+Iterative Square Root Calculation
+
+    The Newton-Raphson method is used for the iterative calculation:
+        x: The radicand.
+        q: The result of the square root calculation.
+        ac: Accumulator for intermediate values.
+        test_result: Used to determine the next value of ac and x.
+    Depending on the value of test_result[WIDTH + 1], the next values of ac and x are adjusted, and q is either incremented or shifted.
+
+Clock-Driven Updates
+
+    The always @(posedge clk) block manages the iterative computation:
+        On starting (sqrt_function_begin), variables are initialized, and the calculation begins.
+        During the busy state (sqrt_busy), intermediate values are updated in each iteration until the computation is complete.
+        When the final iteration is reached (i == ITER-1), sqrt_busy is cleared, and root_ready is set, storing the result in root.
+
+
+ ## Multiplication Part
+
+  Detailed Explanation of the Multiplication Module
+
+The Verilog code implements a sophisticated Multiplier Circuit designed to perform 32-bit multiplication using smaller 16-bit operations. Here’s a breakdown of the key components and processes involved:
+Initial Setup and Registers
+
+    product: A 64-bit register that holds the final multiplication result.
+    product_ready: A signal that indicates when the multiplication process is complete.
+    multiplierCircuitInput1 and multiplierCircuitInput2: These 16-bit registers are used to provide inputs to the internal multiplier module.
+    multiplierCircuitResult: A 32-bit wire that captures the output of the multiplication.
+
+Multiplier Module
+
+An instance of the Multiplier module is used to handle 16-bit multiplications. This module multiplies two 16-bit numbers and outputs a 32-bit result:
+
+verilog
+
+Multiplier multiplier_circuit (
+    .operand_1(multiplierCircuitInput1),
+    .operand_2(multiplierCircuitInput2),
+    .product(multiplierCircuitResult)
+);
+
+Phased Multiplication Process
+
+To multiply two 32-bit numbers, the process is divided into several phases, each handling a portion of the calculation. The results of these phases are then combined to form the final product.
+Phases of Operation
+
+    Initialization Phase:
+        All control signals and intermediate registers are reset.
+        The next_mul_phase is set to start the first phase of multiplication.
+
+    Phase 1: Lower 16-bits Multiplication:
+        Multiplies the lower 16 bits of both operands.
+        Stores the result in partialProduct1.
+
+    Phase 2: Upper-Lower Multiplication:
+        Multiplies the upper 16 bits of operand_1 with the lower 16 bits of operand_2.
+        Stores the result in partialProduct2.
+
+    Phase 3: Lower-Upper Multiplication:
+        Multiplies the lower 16 bits of operand_1 with the upper 16 bits of operand_2.
+        Stores the result in partialProduct3.
+
+    Phase 4: Upper 16-bits Multiplication:
+        Multiplies the upper 16 bits of both operands.
+        Stores the result in partialProduct4.
+
+    Phase 5: Final Product Calculation:
+        Combines the partial products to compute the final 64-bit result:
+
+        verilog
+
+        product <= partialProduct1 + (partialProduct2 << 16) + (partialProduct3 << 16) + (partialProduct4 << 32);
+
+        Sets product_ready to indicate that the final product is available.
+
+State Machine
+
+A state machine is used to control the phases of the multiplication process. The current and next phases are managed using current_mul_phase and next_mul_phase registers.
+
+    State Machine Logic:
+        The state transitions occur on the rising edge of the clock (posedge clk).
+        The operation signal determines if the multiplication process should start or reset.
+
+Here is an example of how the state machine transitions between phases:
+
+verilog
+
+always @(posedge clk) begin
+    if (operation == `FPU_MUL)  
+        current_mul_phase <= next_mul_phase;
+    else                        
+        current_mul_phase <= 'b0;
+end
+
+always @(*) begin
+    case (current_mul_phase)
+        3'b000: begin
+            product_ready <= 0;
+            next_mul_phase <= 3'b001;
+        end
+        3'b001: begin
+            multiplierCircuitInput1 <= operand_1[15:0];
+            multiplierCircuitInput2 <= operand_2[15:0];
+            partialProduct1 <= multiplierCircuitResult;
+            next_mul_phase <= 3'b010;
+        end
+        3'b010: begin
+            multiplierCircuitInput1 <= operand_1[31:16];
+            multiplierCircuitInput2 <= operand_2[15:0];
+            partialProduct2 <= multiplierCircuitResult;
+            next_mul_phase <= 3'b011;
+        end
+        3'b011: begin
+            multiplierCircuitInput1 <= operand_1[15:0];
+            multiplierCircuitInput2 <= operand_2[31:16];
+            partialProduct3 <= multiplierCircuitResult;
+            next_mul_phase <= 3'b100;
+        end
+        3'b100: begin
+            multiplierCircuitInput1 <= operand_1[31:16];
+            multiplierCircuitInput2 <= operand_2[31:16];
+            partialProduct4 <= multiplierCircuitResult;
+            next_mul_phase <= 3'b101;
+        end
+        3'b101: begin
+            product <= partialProduct1 + (partialProduct2 << 16) + (partialProduct3 << 16) + (partialProduct4 << 32);
+            product_ready <= 1;
+            next_mul_phase <= 3'b000;
+        end
+        default: next_mul_phase <= 3'b000;
+    endcase
+end
+
+Summary
+
+Each phase computes a partial product, which is then combined in the final phase to produce the full 64-bit result. The state machine ensures that each phase is executed in the correct order, and the product_ready signal indicates when the computation is complete. This modular and phased approach makes the design efficient and scalable.
+
+## Wave Form
+
+### SQRT:
+![alt text](<Screenshot 2024-07-04 000638.png>)
+
+### Multiplication
+![alt text](<Screenshot 2024-07-04 000650.png>)
+
+### Final
+![alt text](<Screenshot 2024-07-04 000704.png>)
+
+We should be able to see 1126.2958 in F0
