@@ -152,55 +152,7 @@ A state machine is used to control the phases of the multiplication process. The
         The state transitions occur on the rising edge of the clock (posedge clk).
         The operation signal determines if the multiplication process should start or reset.
 
-Here is an example of how the state machine transitions between phases:
 
-verilog
-
-always @(posedge clk) begin
-    if (operation == `FPU_MUL)  
-        current_mul_phase <= next_mul_phase;
-    else                        
-        current_mul_phase <= 'b0;
-end
-
-always @(*) begin
-    case (current_mul_phase)
-        3'b000: begin
-            product_ready <= 0;
-            next_mul_phase <= 3'b001;
-        end
-        3'b001: begin
-            multiplierCircuitInput1 <= operand_1[15:0];
-            multiplierCircuitInput2 <= operand_2[15:0];
-            partialProduct1 <= multiplierCircuitResult;
-            next_mul_phase <= 3'b010;
-        end
-        3'b010: begin
-            multiplierCircuitInput1 <= operand_1[31:16];
-            multiplierCircuitInput2 <= operand_2[15:0];
-            partialProduct2 <= multiplierCircuitResult;
-            next_mul_phase <= 3'b011;
-        end
-        3'b011: begin
-            multiplierCircuitInput1 <= operand_1[15:0];
-            multiplierCircuitInput2 <= operand_2[31:16];
-            partialProduct3 <= multiplierCircuitResult;
-            next_mul_phase <= 3'b100;
-        end
-        3'b100: begin
-            multiplierCircuitInput1 <= operand_1[31:16];
-            multiplierCircuitInput2 <= operand_2[31:16];
-            partialProduct4 <= multiplierCircuitResult;
-            next_mul_phase <= 3'b101;
-        end
-        3'b101: begin
-            product <= partialProduct1 + (partialProduct2 << 16) + (partialProduct3 << 16) + (partialProduct4 << 32);
-            product_ready <= 1;
-            next_mul_phase <= 3'b000;
-        end
-        default: next_mul_phase <= 3'b000;
-    endcase
-end
 
 Summary
 
