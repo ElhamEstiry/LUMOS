@@ -102,13 +102,11 @@ Multiplier Module
 
 An instance of the Multiplier module is used to handle 16-bit multiplications. This module multiplies two 16-bit numbers and outputs a 32-bit result:
 
-verilog
-
-Multiplier multiplier_circuit (
+ Multiplier multiplier_circuit (
     .operand_1(multiplierCircuitInput1),
     .operand_2(multiplierCircuitInput2),
     .product(multiplierCircuitResult)
-);
+ );
 
 Phased Multiplication Process
 
